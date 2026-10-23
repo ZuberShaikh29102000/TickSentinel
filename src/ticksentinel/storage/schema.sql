@@ -6,7 +6,7 @@
 -- Storage budget: Supabase free is 500 MB and goes read-only when exceeded.
 -- Retention (storage/maintenance.py) keeps the total around 300 MB.
 
--- One row per feed per second (~156 bytes measured; ~40 MB/day for 3 venues).
+-- One row per feed per second (~161 bytes measured; ~40 MB/day for 3 venues).
 -- Kept 7 days. Used to investigate incidents.
 CREATE TABLE IF NOT EXISTS market_1s (
     time           timestamptz      NOT NULL,   -- start of the second
@@ -20,9 +20,12 @@ CREATE TABLE IF NOT EXISTS market_1s (
     trade_count    integer          NOT NULL,
     trade_volume   double precision NOT NULL,
     last_trade_px  double precision,
-    -- Leading with (exchange, symbol) lets per-feed time-range deletes use this
-    -- index, so we don't pay for a second index on time alone.
-    PRIMARY KEY (exchange, symbol, time)
+    -- time FIRST: every new row then lands at the right-hand end of the index, so
+    -- pages fill densely. With (exchange, symbol, time), three feeds insert into
+    -- three places at once and pages split half-empty. Measured on 180k rows:
+    -- 161 vs 188 bytes/row (39.7 vs 46.4 MB/day). Retention deletes are a single
+    -- time-range scan on this index.
+    PRIMARY KEY (time, exchange, symbol)
 );
 
 -- One row per feed per minute, rolled up from market_1s. Kept 30 days.
@@ -41,7 +44,7 @@ CREATE TABLE IF NOT EXISTS market_1m (
     trade_count     integer          NOT NULL,
     trade_volume    double precision NOT NULL,
     seconds_present integer          NOT NULL,  -- < 60 means the feed had gaps that minute
-    PRIMARY KEY (exchange, symbol, time)
+    PRIMARY KEY (time, exchange, symbol)
 );
 
 -- Connection lifecycle and integrity events from the feed handlers. Kept forever:

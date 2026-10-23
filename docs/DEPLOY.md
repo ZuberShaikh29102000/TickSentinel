@@ -26,7 +26,9 @@ Render deploys from a GitHub repository.
 ## 2. Create the Supabase database
 
 1. Sign up at supabase.com and create a **new project**.
-   - **Region: Southeast Asia (Singapore)**, the same region as the Render service.
+   - **Region: Asia-Pacific** (or, if a specific list is offered, Southeast Asia
+     (Singapore)), close to the Render service in Singapore. The exact region
+     Supabase chose appears in the pooler host name, e.g. `ap-southeast-1`.
    - Choose a strong database password and save it in a password manager.
 2. Get the connection string: open the project, click **Connect** (top of the
    dashboard), and copy the **Session pooler** URI. It looks like:

@@ -78,7 +78,7 @@ FROM (
     WHERE time >= $1 AND time < $2
 ) s
 GROUP BY 1, 2, 3
-ON CONFLICT (exchange, symbol, time) DO UPDATE SET
+ON CONFLICT (time, exchange, symbol) DO UPDATE SET
     mid_open = EXCLUDED.mid_open, mid_high = EXCLUDED.mid_high,
     mid_low = EXCLUDED.mid_low, mid_close = EXCLUDED.mid_close,
     spread_avg = EXCLUDED.spread_avg, spread_max = EXCLUDED.spread_max,
@@ -97,20 +97,10 @@ async def rollup_minutes(conn: asyncpg.Connection, now: datetime, lookback: time
 
 
 async def delete_older_than(conn: asyncpg.Connection, table: str, cutoff: datetime) -> int:
-    """Delete per feed so each DELETE is a range scan on the primary key
-    (exchange, symbol, time) instead of a full table scan."""
-    assert table in ("market_1s", "market_1m")
-    feeds = await conn.fetch("SELECT DISTINCT exchange, symbol FROM market_1m")
-    deleted = 0
-    for feed in feeds:
-        status = await conn.execute(
-            f"DELETE FROM {table} WHERE exchange = $1 AND symbol = $2 AND time < $3",
-            feed["exchange"],
-            feed["symbol"],
-            cutoff,
-        )
-        deleted += int(status.split()[-1])
-    return deleted
+    """One range delete on the time-first primary key."""
+    assert table in ("market_1s", "market_1m")  # never interpolate untrusted names
+    status = await conn.execute(f"DELETE FROM {table} WHERE time < $1", cutoff)
+    return int(status.split()[-1])
 
 
 async def database_size(conn: asyncpg.Connection) -> int:

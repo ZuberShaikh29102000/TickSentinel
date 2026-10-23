@@ -33,7 +33,7 @@ INSERT_MARKET_1S = """
     INSERT INTO market_1s (time, exchange, symbol, best_bid, best_bid_qty, best_ask,
                            best_ask_qty, book_updates, trade_count, trade_volume, last_trade_px)
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-    ON CONFLICT (exchange, symbol, time) DO NOTHING
+    ON CONFLICT (time, exchange, symbol) DO NOTHING
 """
 INSERT_FEED_EVENT = """
     INSERT INTO feed_events (time, exchange, event_type, detail) VALUES ($1, $2, $3, $4)
