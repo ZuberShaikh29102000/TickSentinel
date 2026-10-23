@@ -1,0 +1,5 @@
+# Store text with LF line endings so scripts and the Docker build work on Linux
+# (Render), even when the repo is checked out on Windows.
+* text=auto eol=lf
+*.sh text eol=lf
+*.gz binary

@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Secrets: only .env.example is committed
+.env
+
+# Runtime output (raw recordings can be GBs; logs are per-machine)
+data/
+logs/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store

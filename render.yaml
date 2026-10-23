@@ -1,0 +1,18 @@
+# Render Blueprint: one free web service running the Docker image.
+# Secrets are NOT in this file: DATABASE_URL is entered in the Render dashboard
+# (sync: false means "ask for the value when the Blueprint is created").
+services:
+  - type: web
+    name: ticksentinel
+    runtime: docker
+    plan: free
+    # Not a US region: Binance blocks US IP addresses. Pick the Supabase project
+    # region to match (Singapore = Supabase ap-southeast-1), to keep DB writes fast.
+    region: singapore
+    healthCheckPath: /health
+    # Deploy on every push to main. Switch to checksPass once CI exists (Phase 7),
+    # so a commit with failing tests can never go live.
+    autoDeployTrigger: commit
+    envVars:
+      - key: DATABASE_URL
+        sync: false

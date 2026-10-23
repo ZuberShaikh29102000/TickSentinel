@@ -1,0 +1,39 @@
+services:
+  # Same major version as Supabase (Postgres 17), plain Postgres, so local runs and
+  # tests behave exactly like production.
+  postgres:
+    # Pinned (not :latest) so an upstream change can't silently break us.
+    image: postgres:17.10
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set in .env}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # -h 127.0.0.1 (TCP), not the default unix socket: during first-run init Postgres
+      # starts a temporary socket-only server, and a socket probe would report
+      # "healthy" just before that server shuts down and the real one starts.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  # The production container, run locally against the postgres service above.
+  # Same image Render builds. Start with: docker compose --profile app up --build
+  app:
+    profiles: ["app"]
+    build: .
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      PORT: "10000"
+    ports:
+      - "10000:10000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:
